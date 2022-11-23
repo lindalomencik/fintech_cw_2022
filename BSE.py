@@ -661,17 +661,24 @@ class Trader_PRZI(Trader):
         verbose = True
 
         Trader.__init__(self, ttype, tid, balance, params, time)
-
-        # unpack the params
+        # default parameter values
+        k = 1
+        f_value = 0.8
+        optimizer = None # no optimizer => plain non-adaptive PRZI
+        s_min = -1.0
+        s_max = +1.0
+        
+        # did call provide different params?
         if type(params) is dict:
-            k = params['k']
-            optimizer = params['optimizer']
+            if 'k' in params:
+                k = params['k']
+            if 'f_value' in params:
+                f_value = params['f_value']
+            if 'optimizer' in params:
+                optimizer = params['optimizer']
             s_min = params['strat_min']
             s_max = params['strat_max']
-        else:
-            optimizer = None
-            s_min = 0.0
-            s_max = 0.0
+            
 
         self.optmzr = optimizer     # this determines whether it's PRZI, PRSH, or PRDE
         self.k = k                  # number of sampling points (cf number of arms on a multi-armed-bandit, or pop-size)
@@ -680,6 +687,7 @@ class Trader_PRZI(Trader):
         self.strat_wait_time = 7200     # how many secs do we give any one strat before switching?
         self.strat_range_min = s_min    # lower-bound on randomly-assigned strategy-value
         self.strat_range_max = s_max    # upper-bound on randomly-assigned strategy-value
+        self.f_value = f_value                  # number of sampling points (cf number of arms on a multi-armed-bandit, or pop-size)
         self.active_strat = 0       # which of the k strategies are we currently playing? -- start with 0
         self.prev_qid = None        # previous order i.d.
         self.strat_eval_time = self.k * self.strat_wait_time   # time to cycle through evaluating all k strategies
@@ -694,7 +702,7 @@ class Trader_PRZI(Trader):
                          's0_index': self.active_strat,    # s0 starts out as active strat
                          'snew_index': self.k,             # (k+1)th item of strategy list is DE's new strategy
                          'snew_stratval': None,            # assigned later
-                         'F': 0.8                          # differential weight -- usually between 0 and 2
+                         'f_value': self.f_value                          # differential weight -- usually between 0 and 2
         }
 
         start_time = time
@@ -1061,7 +1069,7 @@ class Trader_PRZI(Trader):
         # first update each strategy's profit-per-second (pps) value -- this is the "fitness" of each strategy
         for s in self.strats:
             # debugging check: make profit be directly proportional to strategy, no noise
-            # s['profit'] = 100 * abs(s['stratval'])
+            #s['profit'] = 100 * abs(s['stratval'])
             # update pps
             pps_time = time - s['start_t']
             if pps_time > 0:
@@ -1223,7 +1231,7 @@ class Trader_PRZI(Trader):
                     s3_stratval = self.strats[s3_index]['stratval']
 
                     # this is the differential evolution "adaptive step": create a new individual
-                    new_stratval = s1_stratval + self.diffevol['F'] * (s2_stratval - s3_stratval)
+                    new_stratval = s1_stratval + self.diffevol['f_value'] * (s2_stratval - s3_stratval)
 
                     # clip to bounds
                     new_stratval = max(-1, min(+1, new_stratval))
@@ -1583,7 +1591,7 @@ def populate_market(traders_spec, traders, shuffle, verbose):
                     parameters = {'optimizer': 'PRSH', 'k': trader_params['k'],
                                   'strat_min': trader_params['s_min'], 'strat_max': trader_params['s_max']}
                 elif ttype == 'PRDE':
-                    parameters = {'optimizer': 'PRDE', 'k': trader_params['k'],
+                    parameters = {'optimizer': 'PRDE', 'k': trader_params['k'], 'f_value': trader_params['f_value'],
                                   'strat_min': trader_params['s_min'], 'strat_max': trader_params['s_max']}
                 else: # ttype=PRZI
                     parameters = {'optimizer': None, 'k': 1,
