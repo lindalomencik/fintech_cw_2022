@@ -18,13 +18,13 @@ def plot_ppc_individual(b_moving_avg,s_moving_avg,t_moving_avg, value, title):
     plt.plot(time_period, b_moving_avg, label='Buyer (B) profit',linestyle='-') 
     plt.plot(time_period, s_moving_avg, label='Seller (S) profit', linestyle='-')
 
-    plt.ylabel("Total (B+S) Profit Per Second aggregate)")
+    plt.ylabel("Profit Per Second (PPS)")
     plt.xlabel("Hours")
     plt.title(title+str(value))
     plt.legend(loc='best')
 
 #calculating the moving average of pps for one trail - function
-def calculate_ppc(file_name, value, title, plot):
+def calculate_ppc(file_name, value, title, save_location, plot):
     b_new_df = pd.DataFrame()
     s_new_df = pd.DataFrame()
     
@@ -53,6 +53,7 @@ def calculate_ppc(file_name, value, title, plot):
 
     if (plot == True):
         plot_ppc_individual(b_moving_avg,s_moving_avg,t_moving_avg, value, title)
+        plt.savefig(save_location, dpi=400, facecolor="white")
     
     return t_moving_avg, len(df.index)
 
@@ -68,17 +69,17 @@ def process_multiple_ppc(name,start_num, num_trails, step, save_location, title)
     all_trail_t_mov_avg = []
     
     for trial in list(np.arange(start_num,num_trails,step)):
-        trail_t_mov_avg, hours = calculate_ppc(name%trial, trial,title, False)
+        trail_t_mov_avg, hours = calculate_ppc(name%trial, trial, title, 'none', False)
         all_trail_t_mov_avg.append(trail_t_mov_avg)   
         
         time_period = list(np.arange(0,hours))
-        plt.rcParams.update({'font.size': 13})
-        plt.plot(time_period, trail_t_mov_avg,label=f'k = {trial:.1f}',linestyle='-')
-        plt.title(f'{title}({start_num},{num_trails:.1f})')
-        plt.ylabel("Total (B+S) Profit Per Second aggregate)")
+        plt.rcParams.update({'font.size': 17})
+        plt.plot(time_period, trail_t_mov_avg,label=f'{trial:.1f}',linestyle='-')
+        plt.title(f'{title}({start_num},{num_trails-step:.1f})')
+        plt.ylabel("Profit Per Second (PPS)")
         plt.xlabel("Hours")
         plt.legend(loc='best')
-#     plt.savefig(save_location, dpi=400, facecolor="white")
+    plt.savefig(save_location, dpi=400, facecolor="white")
         
     return(all_trail_t_mov_avg)
 
@@ -105,7 +106,8 @@ def normal_distribution_tests(results_array, plot_median):
 #         print( 'excess kurtosis of normal distribution (should be 0): {}'.format( kurtosis(results_array[i]) ))
         print( 'skewness of normal distribution (should be 0): {}'.format( skew(results_array[i]) ))
         _, p = stats.shapiro(results_array[i])
-        print('shapiro of normal distribution (p should be > 0.5):' + format(p,'.30f'))
+#         print('shapiro of normal distribution (p should be > 0.5):' + format(p,'.5f'))
+        print('shapiro of normal distribution (p should be > 0.5):' + format(p))
 #         print(f'median of data: %f' % statistics.median(results_array[i]))
         print()
         
