@@ -1,5 +1,4 @@
-# Internet Economics and Finantial Technology Coursework 2022/23
-
+# Internet Economics and Financial Technology Coursework 2022/23
 For this project, I conducted experiments on an agent-based simulation of contemporary
 financial markets, called the Bristol Stock Exchange (BSE).
 
